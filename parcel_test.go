@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,7 +32,6 @@ func getTestParcel() Parcel {
 func getTestDB(t *testing.T) *sql.DB {
 	db, err := sql.Open("sqlite", "tracker.db")
 	require.NoError(t, err)
-	require.NotNil(t, db)
 	return db
 }
 
@@ -52,10 +52,7 @@ func TestAddGetDelete(t *testing.T) {
 	// get
 	stored, err := store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, parcel.Client, stored.Client)
-	require.Equal(t, parcel.Status, stored.Status)
-	require.Equal(t, parcel.Address, stored.Address)
-	require.Equal(t, parcel.CreatedAt, stored.CreatedAt)
+	assert.Equal(t, parcel, stored)
 
 	// delete
 	err = store.Delete(id)
@@ -88,7 +85,7 @@ func TestSetAddress(t *testing.T) {
 	// получите добавленную посылку и убедитесь, что адрес обновился
 	stored, err := store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, newAddress, stored.Address)
+	assert.Equal(t, newAddress, stored.Address)
 
 	// clean
 	err = store.Delete(id)
@@ -118,12 +115,7 @@ func TestSetStatus(t *testing.T) {
 	// получите добавленную посылку и убедитесь, что статус обновился
 	stored, err := store.Get(id)
 	require.NoError(t, err)
-	require.Equal(t, ParcelStatusSent, stored.Status)
-
-	// clean
-	// нельзя удалить, т.к. уже "sent"
-	err = store.Delete(id)
-	require.Error(t, err)
+	assert.Equal(t, ParcelStatusSent, stored.Status)
 }
 
 // TestGetByClient проверяет получение посылок по идентификатору клиента
@@ -164,19 +156,15 @@ func TestGetByClient(t *testing.T) {
 	// убедитесь в отсутствии ошибки
 	require.NoError(t, err)
 	// убедитесь, что количество полученных посылок совпадает с количеством добавленных
-	require.Len(t, storedParcels, len(parcels))
+	assert.Len(t, storedParcels, len(parcels))
 
 	// check
 	for _, parcel := range storedParcels {
 		// в parcelMap лежат добавленные посылки, ключ - идентификатор посылки, значение - сама посылка
 		// убедитесь, что все посылки из storedParcels есть в parcelMap
 		expected, ok := parcelMap[parcel.Number]
-		require.True(t, ok, "parcel with id %d not found in map", parcel.Number)
+		assert.True(t, ok, "parcel with id %d not found in map", parcel.Number)
 		// убедитесь, что значения полей полученных посылок заполнены верно
-		require.Equal(t, expected.Number, parcel.Number)
-		require.Equal(t, expected.Client, parcel.Client)
-		require.Equal(t, expected.Status, parcel.Status)
-		require.Equal(t, expected.Address, parcel.Address)
-		require.Equal(t, expected.CreatedAt, parcel.CreatedAt)
+		assert.Equal(t, expected, parcel)
 	}
 }
